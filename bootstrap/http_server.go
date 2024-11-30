@@ -25,8 +25,8 @@ func NewFiberHttpServer(port string) *FiberHttpServer {
 
 // Start starts the http server with the providede routes
 // It uses the fiber framework
-func (f *FiberHttpServer) Start(cfg ...fiber.Config) {
-	app := fiber.New(cfg...)
+func (f *FiberHttpServer) Start() {
+	app := fiber.New()
 	//Inject the routes
 	for _, route := range f.routes {
 		route.Register(app)
