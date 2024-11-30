@@ -7,6 +7,8 @@ type App struct {
 
 func (a *App) Run() {
 	// Its concurrent because the grpc server is blocking
-	go a.GrpcServer.Start()
+	if a.GrpcServer != nil {
+		go a.GrpcServer.Start()
+	}
 	a.HttpServer.Start()
 }
