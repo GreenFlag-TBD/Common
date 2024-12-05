@@ -41,7 +41,6 @@ func (f *FiberHttpServer) Start() {
 	}
 
 	log.Fatal(app.Listen(":" + f.Port))
-	return app
 }
 
 // AddRoutes adds routes to the http server
