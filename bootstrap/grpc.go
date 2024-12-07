@@ -41,9 +41,13 @@ func (g *GRPCServerOperator) Start() {
 	grpcServer := grpc.NewServer(g.opts...)
 	g.grpcServer = grpcServer
 	g.server.Register(grpcServer)
-	if err = grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	go func() {
+		if err = grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+	g.GracefulShutdown()
+
 }
 
 func (g *GRPCServerOperator) GracefulShutdown() {
