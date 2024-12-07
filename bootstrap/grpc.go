@@ -9,19 +9,27 @@ import (
 	"syscall"
 )
 
+type GRPCServer interface {
+	Register(server *grpc.Server)
+}
+
 type GRPCServerOperator struct {
 	port       string
-	servers    []GRPCServer
+	server     GRPCServer
 	opts       []grpc.ServerOption
 	grpcServer *grpc.Server
 }
 
-func NewGRPCServer(
+func NewGRPCOperator(
 	port string,
-	servers []GRPCServer,
+	server GRPCServer,
 	opts []grpc.ServerOption,
 ) *GRPCServerOperator {
-	return &GRPCServerOperator{port: port, servers: servers, opts: opts}
+	return &GRPCServerOperator{
+		port:   port,
+		server: server,
+		opts:   opts,
+	}
 }
 
 func (g *GRPCServerOperator) Start() {
@@ -32,9 +40,7 @@ func (g *GRPCServerOperator) Start() {
 	}
 	grpcServer := grpc.NewServer(g.opts...)
 	g.grpcServer = grpcServer
-	for _, server := range g.servers {
-		server.Register(grpcServer)
-	}
+	g.server.Register(grpcServer)
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -45,8 +51,4 @@ func (g *GRPCServerOperator) GracefulShutdown() {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
 	g.grpcServer.GracefulStop()
-}
-
-type GRPCServer interface {
-	Register(server *grpc.Server)
 }
