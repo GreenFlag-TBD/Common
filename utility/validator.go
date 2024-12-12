@@ -15,24 +15,28 @@ const (
 type (
 	CustomJsonDecoder struct {
 		*fiber.Ctx
+		*CustomValidator
 	}
 
 	errorResponse struct {
 		message string
 	}
+
+	CustomValidator struct {
+	}
 )
 
-func NewJsonDecoder(ctx *fiber.Ctx) *CustomJsonDecoder {
-	return &CustomJsonDecoder{ctx}
+func NewValidator() *CustomValidator {
+	return &CustomValidator{}
 }
 
-func (c *CustomJsonDecoder) Decode(v interface{}) error {
-	err := c.BodyParser(&v)
-	if err != nil {
-		return err
-	}
+func NewJsonDecoder(ctx *fiber.Ctx) *CustomJsonDecoder {
+	return &CustomJsonDecoder{ctx, NewValidator()}
+}
+
+func (c *CustomValidator) Validate(v interface{}) error {
 	validator := validator2.New()
-	err = validator.Struct(v)
+	err := validator.Struct(v)
 	if err != nil {
 		errorsCollected := []errorResponse{}
 		for _, err := range err.(validator2.ValidationErrors) {
@@ -47,6 +51,14 @@ func (c *CustomJsonDecoder) Decode(v interface{}) error {
 		return errors.New(flatten(errorsCollected))
 	}
 	return nil
+}
+
+func (c *CustomJsonDecoder) Decode(v interface{}) error {
+	err := c.BodyParser(&v)
+	if err != nil {
+		return err
+	}
+	return c.Validate(v)
 }
 
 func flatten(errs []errorResponse) string {
