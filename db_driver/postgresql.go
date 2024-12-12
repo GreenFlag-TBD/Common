@@ -17,6 +17,7 @@ func Connect(dsn string) *PostgresSQLConn {
 	conn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	return &PostgresSQLConn{conn}
 }
