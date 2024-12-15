@@ -5,11 +5,13 @@ import (
 	"fmt"
 	validator2 "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"reflect"
 	"strings"
 )
 
 const (
-	validationMessageFormat = "%s: '%v' | Needs to conform '%s': '%s'"
+	defaultErrorFormat = "Field %s with value %s failed on validation rule %s for param %s"
+	customErrorTag     = "validationError"
 )
 
 type (
@@ -37,17 +39,32 @@ func NewJsonDecoder(ctx *fiber.Ctx) *CustomJsonDecoder {
 func (c *CustomValidator) Validate(v interface{}) error {
 	validator := validator2.New()
 	err := validator.Struct(v)
+
 	if err != nil {
 		errorsCollected := []errorResponse{}
-		for _, err := range err.(validator2.ValidationErrors) {
+		value := reflect.ValueOf(v)
+		typ := value.Type()
+
+		for _, validationErr := range err.(validator2.ValidationErrors) {
+			field, _ := typ.Elem().FieldByName(validationErr.Field())
+
+			// Check for a custom error message in the `errormsg` tag
+			customMessage := field.Tag.Get(customErrorTag)
+
+			if customMessage != "" {
+				errorsCollected = append(errorsCollected, errorResponse{message: customMessage})
+				continue
+			}
+			// Fall back to default validation message format
 			errorsCollected = append(errorsCollected, errorResponse{message: fmt.Sprintf(
-				validationMessageFormat,
-				err.Field(),
-				err.Value(),
-				err.Tag(),
-				err.Param(),
+				defaultErrorFormat,
+				validationErr.Field(),
+				validationErr.Value(),
+				validationErr.Tag(),
+				validationErr.Param(),
 			)})
 		}
+
 		return errors.New(flatten(errorsCollected))
 	}
 	return nil
