@@ -2,8 +2,9 @@ package utility
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -41,4 +42,16 @@ func ParseToken(tokenString string, seed string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func GenerateNONTTLToken(id string, seed string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		key_id: id,
+	})
+	tokenString, err := token.SignedString([]byte(seed))
+	if err != nil {
+		fmt.Printf("\nError while generating token: %s", err.Error())
+		return "", err
+	}
+	return tokenString, nil
 }
